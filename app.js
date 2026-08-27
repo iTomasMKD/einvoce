@@ -443,3 +443,32 @@ function hideAlert(id) {
     const box = document.getElementById(id);
     if (box) box.classList.add('hidden');
 }
+
+// NAVIGATION
+function switchView(view) {
+    document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active'));
+    document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+
+    if (view === 'create') {
+        const viewCreate = document.getElementById('viewCreate');
+        const navCreate = document.getElementById('navCreate');
+        if (viewCreate) viewCreate.classList.add('active');
+        if (navCreate) navCreate.classList.add('active');
+        const viewTitle = document.getElementById('viewTitle');
+        if (viewTitle && !editingInvoiceId) viewTitle.textContent = 'Креирање на Е-Фактура';
+    } else {
+        const viewList = document.getElementById('viewList');
+        const navList = document.getElementById('navList');
+        if (viewList) viewList.classList.add('active');
+        if (navList) navList.classList.add('active');
+        const viewTitle = document.getElementById('viewTitle');
+        if (viewTitle) viewTitle.textContent = 'Листа на сите фактури';
+        loadInvoicesFromSupabase();
+    }
+
+    // Автоматски затвори го менито на мобилен кога ќе се кликне копче од навигацијата
+    const sidebar = document.querySelector('.sidebar');
+    if (sidebar && window.innerWidth <= 768) {
+        sidebar.classList.remove('mobile-open');
+    }
+}
