@@ -7,10 +7,6 @@ const SUPABASE_ANON_KEY = 'sb_publishable_DBLK0lPDvsKa39_yrUAb6w_lRZm4RCg';
 // Користиме supabaseClient за да избегнеме конфликт со CDN глобалната променлива window.supabase
 const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-// Hardcoded Login Credentials
-const HARDCODED_EMAIL = "admin@example.com";
-const HARDCODED_PASS = "admin123";
-
 let invoiceItems = [];
 let allInvoices = []; // Локален кеш за пребарување
 let editingInvoiceId = null; // null = нова фактура, UUID = измена на постоечка
@@ -28,7 +24,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (loginForm) {
         loginForm.addEventListener('submit', (e) => {
             e.preventDefault();
-            handleLocalLogin();
+            handleSupabaseLogin();
         });
     }
 
@@ -36,43 +32,54 @@ document.addEventListener('DOMContentLoaded', () => {
     const btnLogout = document.getElementById('btnLogout');
     if (btnLogout) {
         btnLogout.addEventListener('click', () => {
-            localStorage.removeItem('isLoggedIn');
-            checkAuthStatus();
+            handleSupabaseLogout();
         });
     }
 
     // Почетна празна ставка за новата фактура
     addItem();
 
-    // Провери статусот за најава
+    // Провери статусот за најава преку Supabase сесијата
     checkAuthStatus();
 });
 
-function handleLocalLogin() {
+// ВИСТИНСКА НАЈАВА ПРЕКУ SUPABASE AUTH
+async function handleSupabaseLogin() {
     const emailInput = document.getElementById('authEmail').value;
     const passwordInput = document.getElementById('authPassword').value;
 
-    if (emailInput === HARDCODED_EMAIL && passwordInput === HARDCODED_PASS) {
-        hideAlert('authAlert');
-        localStorage.setItem('isLoggedIn', 'true');
-        localStorage.setItem('userEmail', emailInput);
-        checkAuthStatus();
+    const { data, error } = await supabaseClient.auth.signInWithPassword({
+        email: emailInput,
+        password: passwordInput,
+    });
+
+    if (error) {
+        showAlert('authAlert', 'Грешка при најава: ' + error.message);
     } else {
-        showAlert('authAlert', 'Погрешен е-маил или лозинка! Внесете admin@example.com / admin123');
+        hideAlert('authAlert');
+        checkAuthStatus();
     }
 }
 
-function checkAuthStatus() {
-    const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
+// ВИСТИНСКА ОДЈАВА ПРЕКУ SUPABASE AUTH
+async function handleSupabaseLogout() {
+    await supabaseClient.auth.signOut();
+    checkAuthStatus();
+}
+
+// ПРОВЕРА НА СТАТУС НА НАЈАВА
+async function checkAuthStatus() {
+    const { data: { session } } = await supabaseClient.auth.getSession();
     const authContainer = document.getElementById('authContainer');
     const appContainer = document.getElementById('appContainer');
 
-    if (isLoggedIn) {
+    if (session) {
         if (authContainer) authContainer.classList.add('hidden');
         if (appContainer) appContainer.classList.remove('hidden');
+        
         const userEmailDisplay = document.getElementById('userEmailDisplay');
         if (userEmailDisplay) {
-            userEmailDisplay.textContent = localStorage.getItem('userEmail') || HARDCODED_EMAIL;
+            userEmailDisplay.textContent = session.user.email;
         }
         loadInvoicesFromSupabase();
     } else {
@@ -167,7 +174,7 @@ function calculateTotals() {
 }
 
 // ==========================================
-// 4. SUPABASE CRUD OPERATIONS
+// 4. SUPABASE CRUD OPERATIONS (MULTITENANT)
 // ==========================================
 
 // SAVE / UPDATE INVOICE
@@ -178,44 +185,49 @@ async function saveInvoice() {
         return;
     }
 
-    // Усогласени полиња со Supabase DB
-// Во saveInvoice() функцијата:
-const invoicePayload = {
-    invoice_number: document.getElementById('invNum').value,
-    invoice_date: document.getElementById('invDate').value,
-    issue_date: document.getElementById('invDate').value, // <-- Додадено за совпаѓање со базата
-    issuer_name: document.getElementById('issuerName').value,
-    issuer_edb: document.getElementById('issuerEdb').value,
-    issuer_embs: document.getElementById('issuerEmbs').value,
-    issuer_address: document.getElementById('issuerAddress').value,
-    issuer_bank: document.getElementById('issuerBank').value,
-    client_name: clientName,
-    client_edb: document.getElementById('clientEdb').value,
-    client_address: document.getElementById('clientAddress').value,
-    subtotal: parseFloat(document.getElementById('subTotal').textContent) || 0,
-    vat_total: parseFloat(document.getElementById('vatTotal').textContent) || 0,
-    grand_total: parseFloat(document.getElementById('grandTotal').textContent) || 0,
-    items: invoiceItems
-};
+    // Земи го корисникот од активната Supabase сесија
+    const { data: { session } } = await supabaseClient.auth.getSession();
+    if (!session) {
+        alert('Сесијата е истечена. Ве молиме најавете се повторно.');
+        checkAuthStatus();
+        return;
+    }
+
+    const invoicePayload = {
+        user_id: session.user.id, // Поврзување со конкретниот најавен корисник во базата
+        invoice_number: document.getElementById('invNum').value,
+        invoice_date: document.getElementById('invDate').value,
+        issue_date: document.getElementById('invDate').value,
+        issuer_name: document.getElementById('issuerName').value,
+        issuer_edb: document.getElementById('issuerEdb').value,
+        issuer_embs: document.getElementById('issuerEmbs').value,
+        issuer_address: document.getElementById('issuerAddress').value,
+        issuer_bank: document.getElementById('issuerBank').value,
+        client_name: clientName,
+        client_edb: document.getElementById('clientEdb').value,
+        client_address: document.getElementById('clientAddress').value,
+        subtotal: parseFloat(document.getElementById('subTotal').textContent) || 0,
+        vat_total: parseFloat(document.getElementById('vatTotal').textContent) || 0,
+        grand_total: parseFloat(document.getElementById('grandTotal').textContent) || 0,
+        items: invoiceItems
+    };
 
     let result;
 
     if (editingInvoiceId) {
-        // UPDATE постоечка фактура
         result = await supabaseClient
             .from('invoices')
             .update(invoicePayload)
             .eq('id', editingInvoiceId)
             .select();
     } else {
-        // INSERT нова фактура
         result = await supabaseClient
             .from('invoices')
             .insert([invoicePayload])
             .select();
     }
 
-    const { data, error } = result;
+    const { error } = result;
 
     if (error) {
         console.error("Supabase Error:", error);
@@ -228,7 +240,7 @@ const invoicePayload = {
     }
 }
 
-// LOAD INVOICES FROM SUPABASE
+// LOAD INVOICES FROM SUPABASE (Ќе се вчитаат само фактурите на најавениот корисник)
 async function loadInvoicesFromSupabase() {
     const tbody = document.getElementById('invoicesListBody');
     if (!tbody) return;
@@ -251,7 +263,6 @@ async function loadInvoicesFromSupabase() {
 }
 
 // EDIT INVOICE (LOAD INTO FORM)
-// EDIT INVOICE (LOAD INTO FORM)
 function editInvoice(id) {
     const inv = allInvoices.find(item => item.id === id);
     if (!inv) return;
@@ -259,8 +270,6 @@ function editInvoice(id) {
     editingInvoiceId = inv.id;
 
     document.getElementById('invNum').value = inv.invoice_number || inv.number || '';
-    
-    // Поддршка и за issue_date и за invoice_date
     document.getElementById('invDate').value = inv.issue_date || inv.invoice_date || inv.date || '';
     
     document.getElementById('issuerName').value = inv.issuer_name || '';
@@ -317,7 +326,7 @@ function renderInvoicesTable(list) {
         const tr = document.createElement('tr');
         tr.innerHTML = `
             <td><strong>${inv.invoice_number || '-'}</strong></td>
-            <td>${inv.invoice_date || '-'}</td>
+            <td>${inv.invoice_date || inv.issue_date || '-'}</td>
             <td>${inv.client_name || '-'}</td>
             <td>${inv.client_edb || '-'}</td>
             <td style="text-align:right;"><strong>${inv.grand_total ? Number(inv.grand_total).toFixed(2) : '0.00'}</strong> MKD</td>
@@ -371,7 +380,9 @@ function resetInvoiceForm() {
     addItem();
 }
 
-// NAVIGATION
+// ==========================================
+// 5. NAVIGATION & UI HELPERS
+// ==========================================
 function switchView(view) {
     document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active'));
     document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
@@ -392,26 +403,14 @@ function switchView(view) {
         if (viewTitle) viewTitle.textContent = 'Листа на сите фактури';
         loadInvoicesFromSupabase();
     }
-}
 
-// HELPERS
-function showAlert(id, msg, isSuccess = false) {
-    const box = document.getElementById(id);
-    if (box) {
-        box.textContent = msg;
-        box.className = `alert ${isSuccess ? 'success' : ''}`;
-        box.classList.remove('hidden');
+    // Автоматски затвори го менито на мобилен при клик
+    const sidebar = document.querySelector('.sidebar');
+    if (sidebar && window.innerWidth <= 768) {
+        sidebar.classList.remove('mobile-open');
     }
 }
 
-function hideAlert(id) {
-    const box = document.getElementById(id);
-    if (box) box.classList.add('hidden');
-}
-
-// ==========================================
-// 5. MOBILE SIDEBAR & HELPERS
-// ==========================================
 function toggleSidebar() {
     const sidebar = document.querySelector('.sidebar');
     if (sidebar) {
@@ -419,17 +418,6 @@ function toggleSidebar() {
     }
 }
 
-document.addEventListener('DOMContentLoaded', () => {
-    document.querySelectorAll('.sidebar .nav-item').forEach(item => {
-        item.addEventListener('click', () => {
-            const sidebar = document.querySelector('.sidebar');
-            if (sidebar && window.innerWidth <= 768) {
-                sidebar.classList.remove('mobile-open');
-            }
-        });
-    });
-});
-
 function showAlert(id, msg, isSuccess = false) {
     const box = document.getElementById(id);
     if (box) {
@@ -442,33 +430,4 @@ function showAlert(id, msg, isSuccess = false) {
 function hideAlert(id) {
     const box = document.getElementById(id);
     if (box) box.classList.add('hidden');
-}
-
-// NAVIGATION
-function switchView(view) {
-    document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active'));
-    document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
-
-    if (view === 'create') {
-        const viewCreate = document.getElementById('viewCreate');
-        const navCreate = document.getElementById('navCreate');
-        if (viewCreate) viewCreate.classList.add('active');
-        if (navCreate) navCreate.classList.add('active');
-        const viewTitle = document.getElementById('viewTitle');
-        if (viewTitle && !editingInvoiceId) viewTitle.textContent = 'Креирање на Е-Фактура';
-    } else {
-        const viewList = document.getElementById('viewList');
-        const navList = document.getElementById('navList');
-        if (viewList) viewList.classList.add('active');
-        if (navList) navList.classList.add('active');
-        const viewTitle = document.getElementById('viewTitle');
-        if (viewTitle) viewTitle.textContent = 'Листа на сите фактури';
-        loadInvoicesFromSupabase();
-    }
-
-    // Автоматски затвори го менито на мобилен кога ќе се кликне копче од навигацијата
-    const sidebar = document.querySelector('.sidebar');
-    if (sidebar && window.innerWidth <= 768) {
-        sidebar.classList.remove('mobile-open');
-    }
 }
