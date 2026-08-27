@@ -525,3 +525,14 @@ select.status-select-inline option[value="Неплатена"] {
     color: #dc2626;
     background: #fef2f2;
 }
+
+/* Експлицитни бои за паѓачкото мени и неговите опции */
+select.status-green {
+    color: #16a34a !important;
+    background-color: #f0fdf4 !important;
+}
+
+select.status-red {
+    color: #dc2626 !important;
+    background-color: #fef2f2 !important;
+}
