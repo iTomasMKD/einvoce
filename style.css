@@ -392,3 +392,64 @@ input, select {
     .glass-card { border: none; background: transparent; }
     input { border: none; background: transparent; color: #000; }
 }
+
+/* --- МОБИЛНА РЕСПОНЗИВНОСТ И SIDEBAR КОНТРОЛА --- */
+
+/* Копчето за мобилно мени стандардно е скриено на десктоп */
+.mobile-menu-btn {
+    display: none;
+    background: #0f172a;
+    color: white;
+    border: none;
+    padding: 8px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 16px;
+    margin-right: 10px;
+}
+
+/* Правила за екрани помали од 768px (мобилни телефони) */
+@media (max-width: 768px) {
+    /* Прикажи го копчето за мени */
+    .mobile-menu-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    /* Главен распоред да оди во вертикален столб */
+    body {
+        flex-direction: column !important;
+        overflow-x: hidden;
+    }
+
+    /* Sidebar целосно се скрива надвор од екранот на левата страна */
+    .sidebar {
+        position: fixed !important;
+        left: -280px !important;
+        top: 0 !important;
+        height: 100vh !important;
+        width: 260px !important;
+        z-index: 9999 !important;
+        transition: left 0.3s ease-in-out !important;
+        box-shadow: 5px 0 15px rgba(0,0,0,0.3);
+    }
+
+    /* Кога ќе се додаде класата .mobile-open, менито се лизга и се појавува на екранот */
+    .sidebar.mobile-open {
+        left: 0 !important;
+    }
+
+    /* Главната содржина зафаќа 100% ширина на мобилен */
+    .main-content {
+        width: 100% !important;
+        padding: 10px !important;
+    }
+
+    /* Нагодување на табелите да не бегаат надвор од екранот */
+    table, .table-container {
+        width: 100%;
+        overflow-x: auto;
+        display: block;
+    }
+}

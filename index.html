@@ -84,11 +84,18 @@
         </aside>
 
         <!-- MAIN CONTENT AREA -->
+      <!-- MAIN CONTENT AREA -->
         <main class="main-content">
             <header class="top-header no-print">
                 <div class="header-title">
-                    <h1 id="viewTitle">Креирање на Е-Фактура</h1>
-                    <p id="viewSubtitle">Пополнете ги деталите и зачувајте директно во Supabase</p>
+                    <!-- Копче за отворање на менито на мобилен -->
+                    <button class="mobile-menu-btn" onclick="toggleSidebar()">
+                        <i class="fa-solid fa-bars"></i>
+                    </button>
+                    <div>
+                        <h1 id="viewTitle">Креирање на Е-Фактура</h1>
+                        <p id="viewSubtitle">Пополнете ги деталите и зачувајте директно во Supabase</p>
+                    </div>
                 </div>
                 <div class="header-actions" id="createActions">
                     <button class="btn btn-secondary" onclick="window.print()"><i class="fa-solid fa-print"></i> Печати / PDF</button>
