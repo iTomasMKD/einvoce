@@ -409,6 +409,9 @@ function hideAlert(id) {
     if (box) box.classList.add('hidden');
 }
 
+// ==========================================
+// 5. MOBILE SIDEBAR & HELPERS
+// ==========================================
 function toggleSidebar() {
     const sidebar = document.querySelector('.sidebar');
     if (sidebar) {
@@ -416,12 +419,27 @@ function toggleSidebar() {
     }
 }
 
-// Автоматски затвори го менито на мобилен кога ќе кликнеш на било која опција
-document.querySelectorAll('.sidebar .nav-item').forEach(item => {
-    item.addEventListener('click', () => {
-        const sidebar = document.querySelector('.sidebar');
-        if (sidebar && window.innerWidth <= 768) {
-            sidebar.classList.remove('mobile-open');
-        }
+document.addEventListener('DOMContentLoaded', () => {
+    document.querySelectorAll('.sidebar .nav-item').forEach(item => {
+        item.addEventListener('click', () => {
+            const sidebar = document.querySelector('.sidebar');
+            if (sidebar && window.innerWidth <= 768) {
+                sidebar.classList.remove('mobile-open');
+            }
+        });
     });
 });
+
+function showAlert(id, msg, isSuccess = false) {
+    const box = document.getElementById(id);
+    if (box) {
+        box.textContent = msg;
+        box.className = `alert ${isSuccess ? 'success' : ''}`;
+        box.classList.remove('hidden');
+    }
+}
+
+function hideAlert(id) {
+    const box = document.getElementById(id);
+    if (box) box.classList.add('hidden');
+}
