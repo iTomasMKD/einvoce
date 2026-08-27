@@ -373,10 +373,11 @@ function renderInvoicesTable(list) {
             <td>${inv.client_edb || '-'}</td>
             <td style="text-align:right;"><strong>${inv.grand_total ? Number(inv.grand_total).toFixed(2) : '0.00'}</strong> MKD</td>
             <td style="text-align:center;" class="no-print">
-                <select onchange="updateInvoiceStatus('${inv.id}', this.value)" style="padding: 4px 8px; border-radius: 6px; border: 1px solid var(--border); font-size: 12px; font-weight: 600; background: white; cursor: pointer;">
-                    <option value="Неплатена" ${currentStatus === 'Неплатена' ? 'selected' : ''}>❌ Неплатена</option>
-                    <option value="Платена" ${currentStatus === 'Платена' ? 'selected' : ''}>✅ Платена</option>
-                </select>
+                <select onchange="updateInvoiceStatus('${inv.id}', this.value); this.style.color = (this.value === 'Платена' ? '#16a34a' : '#dc2626');" 
+                style="padding: 4px 8px; border-radius: 6px; border: 1px solid var(--border); font-size: 12px; font-weight: 600; background: white; cursor: pointer; color: ${currentStatus === 'Платена' ? '#16a34a' : '#dc2626'};">
+                <option value="Неплатена" ${currentStatus === 'Неплатена' ? 'selected' : ''} style="color: #dc2626;">❌ Неплатена</option>
+                <option value="Платена" ${currentStatus === 'Платена' ? 'selected' : ''} style="color: #16a34a;">✅ Платена</option>
+             </select>
             </td>
             <td style="text-align:center; display: none;" class="print-only">${currentStatus}</td> <!-- При печатење покажува само текст -->
             <td style="text-align:center;" class="no-print">
