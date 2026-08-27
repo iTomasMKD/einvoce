@@ -428,11 +428,27 @@ function printFilteredInvoices() {
 }
 
 // ФУНКЦИЈА ЗА ПРЕСМЕТКА НА СУМИ
+// ФИЛТРИРАЊЕ НА ФАКТУРИ (ПО КЛИЕНТ ИЛИ БРОЈ)
+function filterInvoices() {
+    const query = document.getElementById('searchInput').value.toLowerCase();
+    
+    // Филтрирај ја локалната листа според клиентот или бројот на фактурата
+    const filtered = allInvoices.filter(inv => 
+        (inv.invoice_number && inv.invoice_number.toLowerCase().includes(query)) ||
+        (inv.client_name && inv.client_name.toLowerCase().includes(query))
+    );
+    
+    // Прикажи ги филтрираните резултати во табелата и автоматски пресметај ги сумите долу
+    renderInvoicesTable(filtered);
+}
+
+// ПРЕСМЕТКА НА ВКУПНИ СУМИ ЗА ПРИКАЖАНИТЕ (ФИЛТРИРАНИ) ФАКТУРИ
 function updateSummary(list) {
     let totalPaid = 0;
     let totalUnpaid = 0;
 
     list.forEach(inv => {
+        // Земи ја вкупната сума со ДДВ (grand_total)
         const amount = Number(inv.grand_total) || 0;
         const status = inv.payment_status || 'Неплатена';
 
@@ -443,6 +459,7 @@ function updateSummary(list) {
         }
     });
 
+    // Ажурирај ги вредностите во HTML елементите под табелата
     const sumPaidEl = document.getElementById('sumPaid');
     const sumUnpaidEl = document.getElementById('sumUnpaid');
 

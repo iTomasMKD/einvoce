@@ -454,26 +454,50 @@ input, select {
     }
 }
 
+/* Стилизација за печатење и зачувување во PDF */
 @media print {
-    /* Сокриј ги менијата, копчињата за едитирање и бришење при печатење */
-    .sidebar, .no-print, .btn, header, .auth-container {
+    /* Сокриј ги непотребните елементи (странично мени, копчиња за акција, пребарување) */
+    .sidebar, 
+    .no-print, 
+    .filter-bar, 
+    header, 
+    .auth-wrapper {
         display: none !important;
     }
-    
-    /* Прикажи го статусот како текст наместо како dropdown поле */
-    .print-only {
-        display: table-cell !important;
-    }
 
-    /* Прошири ја табелата преку цел екран */
-    .main-content {
+    /* Прошири ја главната содржина преку целиот екран */
+    body, html, .app-layout, .main-content, .content-body {
+        background: white !important;
+        color: black !important;
         margin: 0 !important;
         padding: 0 !important;
         width: 100% !important;
     }
-}
 
-/* Стандардно скриено кога не е во режим на печатење */
-.print-only {
-    display: none;
+    /* Тргни сенки и граници на картичките за да изгледа чисто како документ */
+    .glass-card {
+        border: none !important;
+        box-shadow: none !important;
+        padding: 0 !important;
+        margin: 0 !important;
+    }
+
+    /* Направи го статусот читлив текст при печатење */
+    .data-table select {
+        border: none !important;
+        background: transparent !important;
+        appearance: none;
+        -webkit-appearance: none;
+        font-weight: bold;
+        padding: 0 !important;
+    }
+
+    /* Нагласи го сумарниот дел долу на печатењето */
+    #invoiceSummary {
+        border: 2px solid #cbd5e1 !important;
+        background: #f8fafc !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+        margin-top: 20px !important;
+    }
 }
