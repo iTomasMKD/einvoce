@@ -373,13 +373,13 @@ function renderInvoicesTable(list) {
             <td>${inv.client_edb || '-'}</td>
             <td style="text-align:right;"><strong>${inv.grand_total ? Number(inv.grand_total).toFixed(2) : '0.00'}</strong> MKD</td>
             <td style="text-align:center;" class="no-print">
-             <select onchange="updateInvoiceStatus('${inv.id}', this.value); updateSelectStyle(this);" 
-                    class="invoice-status-select"
-                    data-status="${currentStatus}"
-                    style="padding: 6px 10px; border-radius: 6px; border: 1px solid var(--border); font-size: 12px; font-weight: 700; cursor: pointer; background-color: ${currentStatus === 'Платена' ? '#dcfce7' : '#fee2e2'}; color: ${currentStatus === 'Платена' ? '#15803d' : '#b91c1c'};">
+                <select onchange="updateInvoiceStatus('${inv.id}', this.value); updateSelectStyle(this);" 
+                class="invoice-status-select"
+                data-status="${currentStatus}"
+                style="padding: 6px 10px; border-radius: 6px; border: 1px solid var(--border); font-size: 12px; font-weight: 700; cursor: pointer; background-color: #e0f2fe; color: ${currentStatus === 'Платена' ? '#15803d' : '#b91c1c'};">
                 <option value="Неплатена" ${currentStatus === 'Неплатена' ? 'selected' : ''} style="background: white; color: #b91c1c;">❌ Неплатена</option>
-                <option value="Платена" ${currentStatus === 'Платена' ? 'selected' : ''} style="background: white; color: #15803d;">✅ Платена</option>
-            </select>
+               <option value="Платена" ${currentStatus === 'Платена' ? 'selected' : ''} style="background: white; color: #15803d;">✅ Платена</option>
+             </select>
             </td>
             <td style="text-align:center; display: none;" class="print-only">${currentStatus}</td> <!-- При печатење покажува само текст -->
             <td style="text-align:center;" class="no-print">
@@ -568,11 +568,12 @@ function hideAlert(id) {
 
 function updateSelectStyle(selectElement) {
     const val = selectElement.value;
+    // Поставуваме сина позадина (пример: светла сина #e0f2fe или посилна #bfdbfe)
+    selectElement.style.backgroundColor = '#e0f2fe'; 
+    
     if (val === 'Платена') {
-        selectElement.style.backgroundColor = '#dcfce7'; // светло зелена позадина
-        selectElement.style.color = '#15803d';         // темно зелени букви
+        selectElement.style.color = '#15803d'; // темно зелени букви за Платена
     } else {
-        selectElement.style.backgroundColor = '#fee2e2'; // светло црвена позадина
-        selectElement.style.color = '#b91c1c';         // темно црвени букви
+        selectElement.style.color = '#b91c1c'; // темно црвени букви за Неплатена
     }
 }
