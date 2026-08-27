@@ -408,3 +408,20 @@ function hideAlert(id) {
     const box = document.getElementById(id);
     if (box) box.classList.add('hidden');
 }
+
+function toggleSidebar() {
+    const sidebar = document.querySelector('.sidebar');
+    if (sidebar) {
+        sidebar.classList.toggle('mobile-open');
+    }
+}
+
+// Автоматски затвори го менито на мобилен кога ќе кликнеш на било која опција
+document.querySelectorAll('.sidebar .nav-item').forEach(item => {
+    item.addEventListener('click', () => {
+        const sidebar = document.querySelector('.sidebar');
+        if (sidebar && window.innerWidth <= 768) {
+            sidebar.classList.remove('mobile-open');
+        }
+    });
+});
