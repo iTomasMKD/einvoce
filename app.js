@@ -193,6 +193,10 @@ async function saveInvoice() {
         return;
     }
 
+    // Земи го статусот на плаќање од формата (ако елементот постои)
+    const paymentStatusEl = document.getElementById('paymentStatus');
+    const paymentStatus = paymentStatusEl ? paymentStatusEl.value : 'Неплатена';
+
     const invoicePayload = {
         user_id: session.user.id, // Поврзување со конкретниот најавен корисник во базата
         invoice_number: document.getElementById('invNum').value,
@@ -209,6 +213,7 @@ async function saveInvoice() {
         subtotal: parseFloat(document.getElementById('subTotal').textContent) || 0,
         vat_total: parseFloat(document.getElementById('vatTotal').textContent) || 0,
         grand_total: parseFloat(document.getElementById('grandTotal').textContent) || 0,
+        payment_status: paymentStatus, // Зачувување на статусот
         items: invoiceItems
     };
 
@@ -259,7 +264,7 @@ async function loadInvoicesFromSupabase() {
     const { data, error } = await supabaseClient
         .from('invoices')
         .select('*')
-        .eq('user_id', session.user.id) // <-- Оваа линија го решава проблемот во фронтендот!
+        .eq('user_id', session.user.id)
         .order('created_at', { ascending: false });
 
     if (error) {
@@ -291,6 +296,12 @@ function editInvoice(id) {
     document.getElementById('clientEdb').value = inv.client_edb || '';
     document.getElementById('clientAddress').value = inv.client_address || '';
 
+    // Постави го статусот на плаќање во формата доколку постои селектор
+    const paymentStatusEl = document.getElementById('paymentStatus');
+    if (paymentStatusEl && inv.payment_status) {
+        paymentStatusEl.value = inv.payment_status;
+    }
+
     invoiceItems = Array.isArray(inv.items) && inv.items.length > 0 ? inv.items : [];
     if (invoiceItems.length === 0) addItem();
 
@@ -298,6 +309,23 @@ function editInvoice(id) {
 
     document.getElementById('viewTitle').textContent = 'Измена на Фактура: ' + (inv.invoice_number || inv.number || '');
     switchView('create');
+}
+
+// DIRECT UPDATE PAYMENT STATUS FROM TABLE
+async function updateInvoiceStatus(id, newStatus) {
+    const { error } = await supabaseClient
+        .from('invoices')
+        .update({ payment_status: newStatus })
+        .eq('id', id);
+
+    if (error) {
+        console.error("Status Update Error:", error);
+        alert('Грешка при ажурирање на статусот: ' + error.message);
+    } else {
+        // Ажурирај локално во кешот за да нема потреба од повторно превземање од база
+        const inv = allInvoices.find(item => item.id === id);
+        if (inv) inv.payment_status = newStatus;
+    }
 }
 
 // DELETE INVOICE
@@ -321,7 +349,7 @@ async function deleteInvoice(id) {
     }
 }
 
-// RENDER TABLE WITH EDIT & DELETE BUTTONS
+// RENDER TABLE WITH STATUS SELECT, EDIT & DELETE BUTTONS
 function renderInvoicesTable(list) {
     const tbody = document.getElementById('invoicesListBody');
     if (!tbody) return;
@@ -333,6 +361,8 @@ function renderInvoicesTable(list) {
 
     tbody.innerHTML = '';
     list.forEach(inv => {
+        const currentStatus = inv.payment_status || 'Неплатена';
+
         const tr = document.createElement('tr');
         tr.innerHTML = `
             <td><strong>${inv.invoice_number || '-'}</strong></td>
@@ -340,7 +370,12 @@ function renderInvoicesTable(list) {
             <td>${inv.client_name || '-'}</td>
             <td>${inv.client_edb || '-'}</td>
             <td style="text-align:right;"><strong>${inv.grand_total ? Number(inv.grand_total).toFixed(2) : '0.00'}</strong> MKD</td>
-            <td style="text-align:center;"><span style="color:var(--success); font-size:12px;">Зачувана</span></td>
+            <td style="text-align:center;">
+                <select onchange="updateInvoiceStatus('${inv.id}', this.value)" class="status-select-inline" style="padding: 4px 8px; border-radius: 6px; border: 1px solid var(--border); font-size: 12px; font-weight: 600;">
+                    <option value="Неплатена" ${currentStatus === 'Неплатена' ? 'selected' : ''}>❌ Неплатена</option>
+                    <option value="Платена" ${currentStatus === 'Платена' ? 'selected' : ''}>✅ Платена</option>
+                </select>
+            </td>
             <td style="text-align:center;">
                 <div style="display:flex; gap:6px; justify-content:center;">
                     <button class="btn btn-secondary" onclick="editInvoice('${inv.id}')" title="Измени">
@@ -376,6 +411,9 @@ function resetInvoiceForm() {
     if (clientNameInput) clientNameInput.value = '';
     if (clientEdbInput) clientEdbInput.value = '';
     if (clientAddressInput) clientAddressInput.value = '';
+
+    const paymentStatusEl = document.getElementById('paymentStatus');
+    if (paymentStatusEl) paymentStatusEl.value = 'Неплатена';
 
     const invNumInput = document.getElementById('invNum');
     if (invNumInput) invNumInput.value = 'ФАК-2026/' + String(allInvoices.length + 1).padStart(3, '0');
