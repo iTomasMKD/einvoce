@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="mk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>eInvoice Cloud | Е-Фактурирање</title>
+    <!-- Supabase JS Client -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- FontAwesome & Google Fonts -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <!-- AUTHENTICATION CONTAINER (Local Hardcoded) -->
+    <div id="authContainer" class="auth-wrapper">
+        <div class="auth-card">
+            <div class="auth-header">
+                <div class="auth-logo"><i class="fa-solid fa-bolt"></i></div>
+                <h2>eInvoice Cloud</h2>
+                <p>Најавете се на вашата сметка</p>
+            </div>
+            <div id="authAlert" class="alert hidden"></div>
+            <form id="loginForm">
+                <div class="input-group">
+                    <label for="authEmail">Е-пошта</label>
+                    <div class="input-inner">
+                        <i class="fa-regular fa-envelope"></i>
+                        <input type="email" id="authEmail" value="admin@example.com" required>
+                    </div>
+                </div>
+                <div class="input-group">
+                    <label for="authPassword">Лозинка</label>
+                    <div class="input-inner">
+                        <i class="fa-solid fa-lock"></i>
+                        <input type="password" id="authPassword" value="admin123" required>
+                    </div>
+                </div>
+                <div class="auth-actions">
+                    <button type="submit" class="btn btn-primary btn-full" id="btnLogin">
+                        <i class="fa-solid fa-right-to-bracket"></i> Најави се
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MAIN APP WRAPPER -->
+    <div id="appContainer" class="app-layout hidden">
+        
+        <!-- SIDEBAR -->
+        <aside class="sidebar no-print">
+            <div class="sidebar-top">
+                <div class="brand">
+                    <div class="brand-icon"><i class="fa-solid fa-bolt"></i></div>
+                    <div class="brand-text">
+                        <span class="brand-name">eInvoice</span>
+                        <span class="brand-tag">Enterprise</span>
+                    </div>
+                </div>
+                <nav class="nav-menu">
+                    <button class="nav-item active" id="navCreate" onclick="resetInvoiceForm(); switchView('create');">
+                        <i class="fa-solid fa-file-circle-plus"></i> <span>Нова Фактура</span>
+                    </button>
+                    <button class="nav-item" id="navList" onclick="switchView('list')">
+                        <i class="fa-solid fa-receipt"></i> <span>Сите Фактури</span>
+                    </button>
+                </nav>
+            </div>
+            
+            <div class="sidebar-bottom">
+                <div class="user-profile">
+                    <div class="avatar"><i class="fa-solid fa-user"></i></div>
+                    <div class="user-info">
+                        <span id="userEmailDisplay" class="user-email">admin@example.com</span>
+                        <span class="user-role">Администратор</span>
+                    </div>
+                </div>
+                <button class="btn-logout" id="btnLogout" title="Одјава">
+                    <i class="fa-solid fa-arrow-right-from-bracket"></i>
+                </button>
+            </div>
+        </aside>
+
+        <!-- MAIN CONTENT AREA -->
+        <main class="main-content">
+            <header class="top-header no-print">
+                <div class="header-title">
+                    <h1 id="viewTitle">Креирање на Е-Фактура</h1>
+                    <p id="viewSubtitle">Пополнете ги деталите и зачувајте директно во Supabase</p>
+                </div>
+                <div class="header-actions" id="createActions">
+                    <button class="btn btn-secondary" onclick="window.print()"><i class="fa-solid fa-print"></i> Печати / PDF</button>
+                    <button class="btn btn-primary" onclick="saveInvoice()"><i class="fa-solid fa-cloud-arrow-up"></i> Зачувај</button>
+                </div>
+            </header>
+
+            <div class="content-body">
+                <div id="appAlert" class="alert hidden"></div>
+
+                <!-- VIEW 1: CREATE INVOICE -->
+                <section id="viewCreate" class="view-section active">
+                    <div class="kpi-grid no-print">
+                        <div class="kpi-card">
+                            <div class="kpi-icon icon-blue"><i class="fa-solid fa-wallet"></i></div>
+                            <div>
+                                <span class="kpi-label">Основица</span>
+                                <h3 class="kpi-value"><span id="dashSubtotal">0.00</span> MKD</h3>
+                            </div>
+                        </div>
+                        <div class="kpi-card">
+                            <div class="kpi-icon icon-purple"><i class="fa-solid fa-percent"></i></div>
+                            <div>
+                                <span class="kpi-label">Вкупен ДДВ</span>
+                                <h3 class="kpi-value"><span id="dashVat">0.00</span> MKD</h3>
+                            </div>
+                        </div>
+                        <div class="kpi-card">
+                            <div class="kpi-icon icon-green"><i class="fa-solid fa-money-bill-wave"></i></div>
+                            <div>
+                                <span class="kpi-label">Вкупно за наплата</span>
+                                <h3 class="kpi-value highlight"><span id="dashGrand">0.00</span> MKD</h3>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="glass-card invoice-paper">
+                        <div class="form-grid-2">
+                            <div class="glass-box">
+                                <div class="box-header"><i class="fa-solid fa-building"></i> Издавач (Ваша Фирма)</div>
+                                <div class="form-group">
+                                    <label for="issuerName">Назив:</label>
+                                    <input type="text" id="issuerName" value='ДТК "Пример" ДООЕЛ'>
+                                </div>
+                                <div class="form-group">
+                                    <label for="issuerEdb">ЕДБ:</label>
+                                    <input type="text" id="issuerEdb" value="MK4000000000000">
+                                </div>
+                                <div class="form-group">
+                                    <label for="issuerEmbs">ЕМБС:</label>
+                                    <input type="text" id="issuerEmbs" value="1234567">
+                                </div>
+                                <div class="form-group">
+                                    <label for="issuerAddress">Адреса:</label>
+                                    <input type="text" id="issuerAddress" value="Ул. Македонија бр. 1, Скопје">
+                                </div>
+                                <div class="form-group">
+                                    <label for="issuerBank">Жиро Сметка:</label>
+                                    <input type="text" id="issuerBank" value="300000000000030">
+                                </div>
+                            </div>
+
+                            <div class="glass-box">
+                                <div class="box-header"><i class="fa-solid fa-user-tag"></i> Примач & Метаподатоци</div>
+                                <div class="form-group">
+                                    <label for="clientName">Клиент:</label>
+                                    <input type="text" id="clientName" placeholder="Име на клиент/компанија">
+                                </div>
+                                <div class="form-group">
+                                    <label for="clientEdb">ЕДБ:</label>
+                                    <input type="text" id="clientEdb" placeholder="MK40...">
+                                </div>
+                                <div class="form-group">
+                                    <label for="clientAddress">Адреса:</label>
+                                    <input type="text" id="clientAddress" placeholder="Улица, Град">
+                                </div>
+                                <div class="form-group">
+                                    <label for="invNum">Бр. Фактура:</label>
+                                    <input type="text" id="invNum" value="ФАК-2026/001">
+                                </div>
+                                <div class="form-group">
+                                    <label for="invDate">Датум:</label>
+                                    <input type="date" id="invDate">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="table-container">
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>Опис</th>
+                                        <th style="width: 100px;">Мерка</th>
+                                        <th style="width: 100px;">Кол.</th>
+                                        <th style="width: 140px;">Цена (без ДДВ)</th>
+                                        <th style="width: 110px;">ДДВ %</th>
+                                        <th style="width: 140px;">Вкупно</th>
+                                        <th style="width: 50px;" class="no-print"></th>
+                                    </tr>
+                                </thead>
+                                <tbody id="itemsBody"></tbody>
+                            </table>
+                        </div>
+
+                        <div class="invoice-footer">
+                            <div class="no-print">
+                                <button type="button" class="btn btn-secondary" onclick="addItem()"><i class="fa-solid fa-plus"></i> Додај Ставка</button>
+                            </div>
+                            <div class="totals-box">
+                                <div class="total-row"><span>Основица:</span> <span><span id="subTotal">0.00</span> ден.</span></div>
+                                <div class="total-row"><span>ДДВ:</span> <span><span id="vatTotal">0.00</span> ден.</span></div>
+                                <div class="total-row grand-total"><span>За Наплата:</span> <span><span id="grandTotal">0.00</span> ден.</span></div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- VIEW 2: LIST INVOICES -->
+                <section id="viewList" class="view-section">
+                    <div class="glass-card">
+                        <div class="filter-bar">
+                            <div class="search-input">
+                                <i class="fa-solid fa-magnifying-glass"></i>
+                                <input type="text" id="searchInput" placeholder="Пребарај по бр. на фактура или клиент..." onkeyup="filterInvoices()">
+                            </div>
+                            <button type="button" class="btn btn-secondary" onclick="loadInvoicesFromSupabase()"><i class="fa-solid fa-rotate"></i> Освежи</button>
+                        </div>
+                        <div class="table-container">
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>Број</th>
+                                        <th>Датум</th>
+                                        <th>Клиент</th>
+                                        <th>ЕДБ</th>
+                                        <th style="text-align:right;">Сума (ДДВ)</th>
+                                        <th style="text-align:center;">Статус</th>
+                                        <th style="width:80px; text-align:center;"></th>
+                                    </tr>
+                                </thead>
+                                <tbody id="invoicesListBody">
+                                    <tr><td colspan="7" class="text-center">Вчитување...</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </main>
+    </div>
+
+    <!-- Вчитување на рефакторираниот JS фајл -->
+    <script src="app.js"></script>
+</body>
+</html>
