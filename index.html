@@ -84,11 +84,9 @@
         </aside>
 
         <!-- MAIN CONTENT AREA -->
-      <!-- MAIN CONTENT AREA -->
         <main class="main-content">
             <header class="top-header no-print">
                 <div class="header-title">
-                    <!-- Копче за отворање на менито на мобилен -->
                     <button class="mobile-menu-btn" onclick="toggleSidebar()">
                         <i class="fa-solid fa-bars"></i>
                     </button>
@@ -180,7 +178,6 @@
                                     <label for="invDate">Датум:</label>
                                     <input type="date" id="invDate">
                                 </div>
-                                <!-- Поле за избор на статус на плаќање -->
                                 <div class="form-group">
                                     <label for="paymentStatus">Статус на плаќање:</label>
                                     <select id="paymentStatus" class="form-control" style="width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 6px; font-size: 13px; background: white;">
@@ -241,8 +238,7 @@
                                         <th>ЕДБ</th>
                                         <th style="text-align:right;">Сума (ДДВ)</th>
                                         <th style="text-align:center;">Статус</th>
-                                        <th style="width:100px; text-align:center;">Акции</th>
-                                        <th style="width:80px; text-align:center;"></th>
+                                        <th style="width:120px; text-align:center;">Акции</th>
                                     </tr>
                                 </thead>
                                 <tbody id="invoicesListBody">
@@ -250,13 +246,27 @@
                                 </tbody>
                             </table>
                         </div>
+
+                        <!-- СУМАРЕН ПРИКАЗ ПОД ТАБЕЛАТА -->
+                        <div id="invoiceSummary" style="display: flex; justify-content: space-between; align-items: center; margin-top: 15px; padding: 15px; background: #f8fafc; border: 1px solid var(--border); border-radius: 8px; font-size: 14px;">
+                            <div>
+                                <span>💳 Вкупно платени: <strong id="sumPaid" style="color: #16a34a;">0.00 MKD</strong></span>
+                                <span style="margin-left: 20px;">⏳ Вкупно за наплата (неплатени): <strong id="sumUnpaid" style="color: #dc2626;">0.00 MKD</strong></span>
+                            </div>
+                            <div>
+                                <button class="btn btn-primary no-print" onclick="printFilteredInvoices()" style="padding: 8px 15px; cursor: pointer;">
+                                    <i class="fa-solid fa-print"></i> Печати / PDF извештај
+                                </button>
+                            </div>
+                        </div>
+
                     </div>
                 </section>
             </div>
         </main>
     </div>
 
-    <!-- Вчитување на рефакторираниот JS фајл -->
+    <!-- Главниот JS фајл -->
     <script src="app.js"></script>
 </body>
 </html>
