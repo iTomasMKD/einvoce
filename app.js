@@ -373,12 +373,13 @@ function renderInvoicesTable(list) {
             <td>${inv.client_edb || '-'}</td>
             <td style="text-align:right;"><strong>${inv.grand_total ? Number(inv.grand_total).toFixed(2) : '0.00'}</strong> MKD</td>
             <td style="text-align:center;" class="no-print">
-               <select onchange="updateInvoiceStatus('${inv.id}', this.value); this.className = (this.value === 'Платена' ? 'status-green' : 'status-red'); updateSummary(allInvoices);" 
-                        class="${currentStatus === 'Платена' ? 'status-green' : 'status-red'}"
-                        style="padding: 6px 10px; border-radius: 6px; border: 1px solid var(--border); font-size: 12px; font-weight: 700; cursor: pointer;">
-                        <option value="Неплатена" ${currentStatus === 'Неплатена' ? 'selected' : ''} style="color: #dc2626; background: white;">❌ Неплатена</option>
-                        <option value="Платена" ${currentStatus === 'Платена' ? 'selected' : ''} style="color: #16a34a; background: white;">✅ Платена</option>
-                </select>
+             <select onchange="updateInvoiceStatus('${inv.id}', this.value); updateSelectStyle(this);" 
+                    class="invoice-status-select"
+                    data-status="${currentStatus}"
+                    style="padding: 6px 10px; border-radius: 6px; border: 1px solid var(--border); font-size: 12px; font-weight: 700; cursor: pointer; background-color: ${currentStatus === 'Платена' ? '#dcfce7' : '#fee2e2'}; color: ${currentStatus === 'Платена' ? '#15803d' : '#b91c1c'};">
+                <option value="Неплатена" ${currentStatus === 'Неплатена' ? 'selected' : ''} style="background: white; color: #b91c1c;">❌ Неплатена</option>
+                <option value="Платена" ${currentStatus === 'Платена' ? 'selected' : ''} style="background: white; color: #15803d;">✅ Платена</option>
+            </select>
             </td>
             <td style="text-align:center; display: none;" class="print-only">${currentStatus}</td> <!-- При печатење покажува само текст -->
             <td style="text-align:center;" class="no-print">
@@ -563,4 +564,15 @@ function showAlert(id, msg, isSuccess = false) {
 function hideAlert(id) {
     const box = document.getElementById(id);
     if (box) box.classList.add('hidden');
+}
+
+function updateSelectStyle(selectElement) {
+    const val = selectElement.value;
+    if (val === 'Платена') {
+        selectElement.style.backgroundColor = '#dcfce7'; // светло зелена позадина
+        selectElement.style.color = '#15803d';         // темно зелени букви
+    } else {
+        selectElement.style.backgroundColor = '#fee2e2'; // светло црвена позадина
+        selectElement.style.color = '#b91c1c';         // темно црвени букви
+    }
 }
