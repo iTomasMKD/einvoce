@@ -350,18 +350,19 @@ async function deleteInvoice(id) {
 }
 
 // RENDER TABLE WITH STATUS SELECT, EDIT & DELETE BUTTONS
+// RENDER TABLE WITH SUMMARY CALCULATION
 function renderInvoicesTable(list) {
     const tbody = document.getElementById('invoicesListBody');
     if (!tbody) return;
 
     if (!list || list.length === 0) {
         tbody.innerHTML = `<tr><td colspan="7" class="text-center">Нема пронајдено фактури.</td></tr>`;
+        updateSummary([]); // Ресетирај суми на 0
         return;
     }
 
     tbody.innerHTML = '';
     list.forEach(inv => {
-        // Проверка дали постои статус во базата, ако не стави „Неплатена“
         const currentStatus = inv.payment_status || 'Неплатена';
 
         const tr = document.createElement('tr');
@@ -371,13 +372,14 @@ function renderInvoicesTable(list) {
             <td>${inv.client_name || '-'}</td>
             <td>${inv.client_edb || '-'}</td>
             <td style="text-align:right;"><strong>${inv.grand_total ? Number(inv.grand_total).toFixed(2) : '0.00'}</strong> MKD</td>
-            <td style="text-align:center;">
-                <select onchange="updateInvoiceStatus('${inv.id}', this.value)" style="padding: 5px 10px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 12px; font-weight: 600; background: white; cursor: pointer;">
+            <td style="text-align:center;" class="no-print">
+                <select onchange="updateInvoiceStatus('${inv.id}', this.value)" style="padding: 4px 8px; border-radius: 6px; border: 1px solid var(--border); font-size: 12px; font-weight: 600; background: white; cursor: pointer;">
                     <option value="Неплатена" ${currentStatus === 'Неплатена' ? 'selected' : ''}>❌ Неплатена</option>
                     <option value="Платена" ${currentStatus === 'Платена' ? 'selected' : ''}>✅ Платена</option>
                 </select>
             </td>
-            <td style="text-align:center;">
+            <td style="text-align:center; display: none;" class="print-only">${currentStatus}</td> <!-- При печатење покажува само текст -->
+            <td style="text-align:center;" class="no-print">
                 <div style="display:flex; gap:6px; justify-content:center;">
                     <button class="btn btn-secondary" onclick="editInvoice('${inv.id}')" title="Измени">
                         <i class="fa-solid fa-pen-to-square"></i>
@@ -390,6 +392,69 @@ function renderInvoicesTable(list) {
         `;
         tbody.appendChild(tr);
     });
+
+    // Пресметај ги сумите за тековната (филтрирана) листа
+    updateSummary(list);
+}
+
+// ФУНКЦИЈА ЗА ПРЕСМЕТКА НА СУМИ
+function updateSummary(list) {
+    let totalPaid = 0;
+    let totalUnpaid = 0;
+
+    list.forEach(inv => {
+        const amount = Number(inv.grand_total) || 0;
+        const status = inv.payment_status || 'Неплатена';
+
+        if (status === 'Платена') {
+            totalPaid += amount;
+        } else {
+            totalUnpaid += amount;
+        }
+    });
+
+    const sumPaidEl = document.getElementById('sumPaid');
+    const sumUnpaidEl = document.getElementById('sumUnpaid');
+
+    if (sumPaidEl) sumPaidEl.textContent = totalPaid.toFixed(2) + ' MKD';
+    if (sumUnpaidEl) sumUnpaidEl.textContent = totalUnpaid.toFixed(2) + ' MKD';
+}
+
+// ФУНКЦИЈА ЗА ПЕЧАТЕЊЕ И ЗАЧУВУВАЊЕ КАКО PDF
+function printFilteredInvoices() {
+    // Позиви ја стандардната функција за печатење на прелистувачот
+    // Во print дијалогот корисникот може да одбере "Save as PDF"
+    window.print();
+}
+
+// ФУНКЦИЈА ЗА ПРЕСМЕТКА НА СУМИ
+function updateSummary(list) {
+    let totalPaid = 0;
+    let totalUnpaid = 0;
+
+    list.forEach(inv => {
+        const amount = Number(inv.grand_total) || 0;
+        const status = inv.payment_status || 'Неплатена';
+
+        if (status === 'Платена') {
+            totalPaid += amount;
+        } else {
+            totalUnpaid += amount;
+        }
+    });
+
+    const sumPaidEl = document.getElementById('sumPaid');
+    const sumUnpaidEl = document.getElementById('sumUnpaid');
+
+    if (sumPaidEl) sumPaidEl.textContent = totalPaid.toFixed(2) + ' MKD';
+    if (sumUnpaidEl) sumUnpaidEl.textContent = totalUnpaid.toFixed(2) + ' MKD';
+}
+
+// ФУНКЦИЈА ЗА ПЕЧАТЕЊЕ И ЗАЧУВУВАЊЕ КАКО PDF
+function printFilteredInvoices() {
+    // Позиви ја стандардната функција за печатење на прелистувачот
+    // Во print дијалогот корисникот може да одбере "Save as PDF"
+    window.print();
 }
 
 // FILTER INVOICES

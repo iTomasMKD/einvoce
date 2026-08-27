@@ -453,3 +453,27 @@ input, select {
         display: block;
     }
 }
+
+@media print {
+    /* Сокриј ги менијата, копчињата за едитирање и бришење при печатење */
+    .sidebar, .no-print, .btn, header, .auth-container {
+        display: none !important;
+    }
+    
+    /* Прикажи го статусот како текст наместо како dropdown поле */
+    .print-only {
+        display: table-cell !important;
+    }
+
+    /* Прошири ја табелата преку цел екран */
+    .main-content {
+        margin: 0 !important;
+        padding: 0 !important;
+        width: 100% !important;
+    }
+}
+
+/* Стандардно скриено кога не е во режим на печатење */
+.print-only {
+    display: none;
+}
