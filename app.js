@@ -240,16 +240,26 @@ async function saveInvoice() {
     }
 }
 
-// LOAD INVOICES FROM SUPABASE (Ќе се вчитаат само фактурите на најавениот корисник)
+// LOAD INVOICES FROM SUPABASE (Само фактурите на најавениот корисник)
 async function loadInvoicesFromSupabase() {
     const tbody = document.getElementById('invoicesListBody');
     if (!tbody) return;
 
     tbody.innerHTML = `<tr><td colspan="7" class="text-center">Вчитување од Supabase...</td></tr>`;
 
+    // 1. Земи го најавениот корисник
+    const { data: { session } } = await supabaseClient.auth.getSession();
+    
+    if (!session) {
+        tbody.innerHTML = `<tr><td colspan="7" class="text-center text-danger">Не сте најавени.</td></tr>`;
+        return;
+    }
+
+    // 2. Побарај ги фактурите САМО за тој корисник (.eq('user_id', session.user.id))
     const { data, error } = await supabaseClient
         .from('invoices')
         .select('*')
+        .eq('user_id', session.user.id) // <-- Оваа линија го решава проблемот во фронтендот!
         .order('created_at', { ascending: false });
 
     if (error) {
