@@ -361,6 +361,7 @@ function renderInvoicesTable(list) {
 
     tbody.innerHTML = '';
     list.forEach(inv => {
+        // Проверка дали постои статус во базата, ако не стави „Неплатена“
         const currentStatus = inv.payment_status || 'Неплатена';
 
         const tr = document.createElement('tr');
@@ -371,7 +372,7 @@ function renderInvoicesTable(list) {
             <td>${inv.client_edb || '-'}</td>
             <td style="text-align:right;"><strong>${inv.grand_total ? Number(inv.grand_total).toFixed(2) : '0.00'}</strong> MKD</td>
             <td style="text-align:center;">
-                <select onchange="updateInvoiceStatus('${inv.id}', this.value)" class="status-select-inline" style="padding: 4px 8px; border-radius: 6px; border: 1px solid var(--border); font-size: 12px; font-weight: 600;">
+                <select onchange="updateInvoiceStatus('${inv.id}', this.value)" style="padding: 5px 10px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 12px; font-weight: 600; background: white; cursor: pointer;">
                     <option value="Неплатена" ${currentStatus === 'Неплатена' ? 'selected' : ''}>❌ Неплатена</option>
                     <option value="Платена" ${currentStatus === 'Платена' ? 'selected' : ''}>✅ Платена</option>
                 </select>
