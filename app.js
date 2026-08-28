@@ -358,6 +358,7 @@ function renderInvoicesTable(list) {
     if (!list || list.length === 0) {
         tbody.innerHTML = `<tr><td colspan="7" class="text-center">Нема пронајдено фактури.</td></tr>`;
         updateSummary([]); // Ресетирај суми на 0
+        renderClientRanking([]);
         return;
     }
 
@@ -398,6 +399,7 @@ function renderInvoicesTable(list) {
 
     // Пресметај ги сумите за тековната (филтрирана) листа
     updateSummary(list);
+    renderClientRanking(list);
 }
 
 // ФУНКЦИЈА ЗА ПРЕСМЕТКА НА СУМИ
@@ -430,59 +432,51 @@ function printFilteredInvoices() {
     window.print();
 }
 
-// ФУНКЦИЈА ЗА ПРЕСМЕТКА НА СУМИ
-// ФИЛТРИРАЊЕ НА ФАКТУРИ (ПО КЛИЕНТ ИЛИ БРОЈ)
-function filterInvoices() {
-    const query = document.getElementById('searchInput').value.toLowerCase();
-    
-    // Филтрирај ја локалната листа според клиентот или бројот на фактурата
-    const filtered = allInvoices.filter(inv => 
-        (inv.invoice_number && inv.invoice_number.toLowerCase().includes(query)) ||
-        (inv.client_name && inv.client_name.toLowerCase().includes(query))
-    );
-    
-    // Прикажи ги филтрираните резултати во табелата и автоматски пресметај ги сумите долу
-    renderInvoicesTable(filtered);
-}
+function renderClientRanking(list) {
+    const tbody = document.getElementById('clientsListBody');
+    if (!tbody) return;
 
-// ПРЕСМЕТКА НА ВКУПНИ СУМИ ЗА ПРИКАЖАНИТЕ (ФИЛТРИРАНИ) ФАКТУРИ
-function updateSummary(list) {
-    let totalPaid = 0;
-    let totalUnpaid = 0;
-
+    const clients = {};
     list.forEach(inv => {
-        // Земи ја вкупната сума со ДДВ (grand_total)
-        const amount = Number(inv.grand_total) || 0;
-        const status = inv.payment_status || 'Неплатена';
+        const name = (inv.client_name || 'Непознат клиент').trim();
+        const key = name.toLocaleLowerCase();
+        if (!clients[key]) clients[key] = { name, invoices: 0, paid: 0, unpaid: 0, total: 0 };
 
-        if (status === 'Платена') {
-            totalPaid += amount;
-        } else {
-            totalUnpaid += amount;
-        }
+        const amount = Number(inv.grand_total) || 0;
+        clients[key].invoices += 1;
+        clients[key].total += amount;
+        if ((inv.payment_status || 'Неплатена') === 'Платена') clients[key].paid += amount;
+        else clients[key].unpaid += amount;
     });
 
-    // Ажурирај ги вредностите во HTML елементите под табелата
-    const sumPaidEl = document.getElementById('sumPaid');
-    const sumUnpaidEl = document.getElementById('sumUnpaid');
-
-    if (sumPaidEl) sumPaidEl.textContent = totalPaid.toFixed(2) + ' MKD';
-    if (sumUnpaidEl) sumUnpaidEl.textContent = totalUnpaid.toFixed(2) + ' MKD';
+    const ranking = Object.values(clients).sort((a, b) => b.paid - a.paid || b.total - a.total);
+    tbody.innerHTML = ranking.length ? ranking.map((client, index) => `
+        <tr>
+            <td><strong>${index + 1}</strong></td>
+            <td>${escapeHtml(client.name)}</td>
+            <td>${client.invoices}</td>
+            <td style="text-align:right; color:#16a34a;"><strong>${client.paid.toFixed(2)} MKD</strong></td>
+            <td style="text-align:right; color:#dc2626;">${client.unpaid.toFixed(2)} MKD</td>
+            <td style="text-align:right;"><strong>${client.total.toFixed(2)} MKD</strong></td>
+        </tr>
+    `).join('') : '<tr><td colspan="6" class="text-center">Нема податоци за клиенти.</td></tr>';
 }
 
-// ФУНКЦИЈА ЗА ПЕЧАТЕЊЕ И ЗАЧУВУВАЊЕ КАКО PDF
-function printFilteredInvoices() {
-    // Позиви ја стандардната функција за печатење на прелистувачот
-    // Во print дијалогот корисникот може да одбере "Save as PDF"
-    window.print();
+function escapeHtml(value) {
+    return String(value).replace(/[&<>'"]/g, character => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;'
+    }[character]));
 }
 
-// FILTER INVOICES
+// FILTER INVOICES AND CLIENTS
 function filterInvoices() {
-    const query = document.getElementById('searchInput').value.toLowerCase();
+    const query = document.getElementById('searchInput').value.trim().toLocaleLowerCase();
+    const status = document.getElementById('statusFilter').value;
     const filtered = allInvoices.filter(inv => 
-        (inv.invoice_number && inv.invoice_number.toLowerCase().includes(query)) ||
-        (inv.client_name && inv.client_name.toLowerCase().includes(query))
+        (status === 'all' || (inv.payment_status || 'Неплатена') === status) &&
+        [inv.invoice_number, inv.client_name, inv.client_edb, inv.client_address]
+            .filter(Boolean)
+            .some(value => String(value).toLocaleLowerCase().includes(query))
     );
     renderInvoicesTable(filtered);
 }

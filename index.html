@@ -224,8 +224,13 @@
                         <div class="filter-bar">
                             <div class="search-input">
                                 <i class="fa-solid fa-magnifying-glass"></i>
-                                <input type="text" id="searchInput" placeholder="Пребарај по бр. на фактура или клиент..." onkeyup="filterInvoices()">
+                                <input type="text" id="searchInput" placeholder="Пребарај фактури или клиенти..." oninput="filterInvoices()">
                             </div>
+                            <select id="statusFilter" class="status-filter" onchange="filterInvoices()" aria-label="Филтер по статус">
+                                <option value="all">Сите статуси</option>
+                                <option value="Платена">Само платени</option>
+                                <option value="Неплатена">Само неплатени</option>
+                            </select>
                             <button type="button" class="btn btn-secondary" onclick="loadInvoicesFromSupabase()"><i class="fa-solid fa-rotate"></i> Освежи</button>
                         </div>
                         <div class="table-container">
@@ -257,6 +262,31 @@
                                 <button class="btn btn-primary no-print" onclick="printFilteredInvoices()" style="padding: 8px 15px; cursor: pointer;">
                                     <i class="fa-solid fa-print"></i> Печати / PDF извештај
                                 </button>
+                            </div>
+                        </div>
+
+                        <div class="client-report no-print">
+                            <div class="client-report-header">
+                                <div>
+                                    <h2>Клиенти по најмногу платено</h2>
+                                    <p>Рангирање според вкупниот износ на платени фактури</p>
+                                </div>
+                                <i class="fa-solid fa-ranking-star" aria-hidden="true"></i>
+                            </div>
+                            <div class="table-container">
+                                <table class="data-table client-table">
+                                    <thead>
+                                        <tr>
+                                            <th>#</th>
+                                            <th>Клиент</th>
+                                            <th>Фактури</th>
+                                            <th style="text-align:right;">Платено</th>
+                                            <th style="text-align:right;">Неплатено</th>
+                                            <th style="text-align:right;">Вкупно</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="clientsListBody"></tbody>
+                                </table>
                             </div>
                         </div>
 
